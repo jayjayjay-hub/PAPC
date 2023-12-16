@@ -1,3 +1,7 @@
+import csv
+import pprint
+from pathlib import Path
+
 from datetime import datetime, timedelta
 
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -29,14 +33,23 @@ events_result = (
 )
 events = events_result.get("items", [])
 
+
 for event in events:
     start = event["start"].get("dateTime", event["start"].get("date"))
-    print(start, event["summary"])
+    URL = event["hangoutLink"]
+    output = [start, URL, "summary"]
+    with open(__file__.replace('papc.py', '') + 'data.csv', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(output)
 
-    event["summary"] = f'⭐️ {event["summary"]}'
-
-    updated_event = (
-        service.events()
-        .update(calendarId="primary", eventId=event["id"], body=event)
-        .execute()
-    )
+#for event in events:
+#    start = event["start"].get("dateTime", event["start"].get("date"))
+#    print(start, event["summary"])
+#
+#    event["summary"] = f'⭐️ {event["summary"]}'
+#
+#    updated_event = (
+#        service.events()
+#        .update(calendarId="primary", eventId=event["id"], body=event)
+#        .execute()
+#    )
