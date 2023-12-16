@@ -13,6 +13,16 @@ def authenticate_and_get_service():
     creds = flow.run_local_server(port=0)
     return build("calendar", "v3", credentials=creds)
 
+def classify_url_type(url):
+    # URLがZoomのものか判定
+    if re.search(r"zoom\.us", url):
+        return "zoom"
+    # URLがGoogle Meetのものか判定
+    elif re.search(r"meet\.google\.com", url):
+        return "meet"
+    else:
+        return "else"
+
 def get_today_and_tomorrow_events(service):
     # 現在の日本時間
     now_jp = datetime.now(timezone(timedelta(hours=9)))
@@ -60,7 +70,9 @@ def write_events_to_csv(events, csv_filename):
 
             # URLがあればCSVに書き込む
             if URL != "No URL":
-                output = [start_time, URL, summary]
+                # URLの種類を判定
+                URL_type = classify_url_type(URL)
+                output = [start_time, URL, summary, URL_type]
                 writer.writerow(output)
 
 def main():
