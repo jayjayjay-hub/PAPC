@@ -1,57 +1,78 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 import re
-import webbrowser
+import csv
 
 # Google Calendar APIのスコープ
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
 def authenticate_and_get_service():
+    # Google Calendar APIの認証とサービスの取得
     flow = InstalledAppFlow.from_client_secrets_file("papc.json", SCOPES)
     creds = flow.run_local_server(port=0)
     return build("calendar", "v3", credentials=creds)
+
+def get_today_and_tomorrow_events(service):
+    # 現在の日本時間
+    now_jp = datetime.now(timezone(timedelta(hours=9)))
+
+    # 今日と明日の開始と終了の日時を設定
+    start_of_today = datetime(now_jp.year, now_jp.month, now_jp.day, 0, 0, 0, tzinfo=timezone(timedelta(hours=9)))
+    end_of_today = start_of_today + timedelta(days=1)
+    start_of_tomorrow = start_of_today + timedelta(days=1)
+    end_of_tomorrow = start_of_tomorrow + timedelta(days=1)
+
+    # 今日と明日のイベントを取得
+    events_result_today = (
+        service.events()
+        .list(
+            calendarId="primary",
+            timeMin=start_of_today.isoformat(),
+            timeMax=end_of_tomorrow.isoformat(),
+            singleEvents=True,
+            orderBy="startTime",
+        )
+        .execute()
+    )
+    events_today_and_tomorrow = events_result_today.get("items", [])
+
+    return events_today_and_tomorrow
+
+def write_events_to_csv(events, csv_filename):
+    # CSVファイルに予定を書き込む
+    with open(csv_filename, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Start Time", "URL", "Summary"])
+
+        # 予定をCSVに書き込む
+        for event in events:
+            summary = event.get("summary", "No Title")
+            start_time = event["start"].get("dateTime", event["start"].get("date"))
+
+            # Google Meetの場合はhangoutLinkを使用し、それ以外はdescriptionからURLを抽出
+            if "hangoutLink" in event:
+                URL = event["hangoutLink"]
+            else:
+                description = event.get("description", "")
+                URL_match = re.search(r"<a\s+href=\"(?P<url>https?://[^\"]+)\">", description)
+                URL = URL_match.group("url") if URL_match else "No URL"
+
+            # URLがあればCSVに書き込む
+            if URL != "No URL":
+                output = [start_time, URL, summary]
+                writer.writerow(output)
 
 def main():
     # Google Calendar APIの認証とサービスの取得
     service = authenticate_and_get_service()
     print(service)
 
-    # 今日の開始と終了の日時を設定
-    now = datetime.utcnow()
-    start_of_day = datetime(now.year, now.month, now.day, 0, 0, 0)
-    end_of_day = start_of_day + timedelta(days=1)
+    # 今日と明日の予定を取得
+    events_today_and_tomorrow = get_today_and_tomorrow_events(service)
 
-    # 今日のイベントを取得
-    events_result = (
-        service.events()
-        .list(
-            calendarId="primary",
-            timeMin=start_of_day.isoformat() + "Z",
-            timeMax=end_of_day.isoformat() + "Z",
-            singleEvents=True,
-            orderBy="startTime",
-        )
-        .execute()
-    )
-    events = events_result.get("items", [])
-
-    # 今日の予定を確認し、URLがあれば開く
-    for event in events:
-        summary = event.get("summary", "No Title")
-        start_time = event["start"].get("dateTime", event["start"].get("date"))
-        print(f"Event: {summary}, Start Time: {start_time}")
-
-        # 予定の詳細を確認
-        description = event.get("description", "")
-        print(f"Description: {description}")
-
-		# 詳細中にURLがあれば開く
-        url_match = re.search(r"<a\s+href=\"(?P<url>https?://[^\"]+)\">", description)
-        if url_match:
-              url_to_output = url_match.group("url")
-              print(f"Opening URL: {url_to_output}")
-
+    # 今日と明日の予定を一つのCSVに書き込む
+    write_events_to_csv(events_today_and_tomorrow, 'data_today_and_tomorrow.csv')
 
 if __name__ == "__main__":
     main()
