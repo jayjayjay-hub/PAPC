@@ -34,13 +34,15 @@ events_result = (
 events = events_result.get("items", [])
 
 
-for event in events:
-    start = event["start"].get("dateTime", event["start"].get("date"))
-    URL = event["hangoutLink"]
-    output = [start, URL, "summary"]
-    with open(__file__.replace('papc.py', '') + 'data.csv', 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(output)
+with open(__file__.replace('papc.py', '') + 'data.csv', 'w') as f:
+
+    for event in events:
+        start = event["start"].get("dateTime", event["start"].get("date"))
+        if "hangoutLink" in event:
+            URL = event["hangoutLink"]
+            output = [start, URL, event["summary"]]
+            writer = csv.writer(f)
+            writer.writerow(output)
 
 #for event in events:
 #    start = event["start"].get("dateTime", event["start"].get("date"))
