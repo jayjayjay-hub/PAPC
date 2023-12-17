@@ -14,27 +14,25 @@ def authenticate_and_get_service():
     creds = flow.run_local_server(port=0)
     return build("calendar", "v3", credentials=creds)
 
-def print_today_events_info(service):
+def save_today_events_to_csv(service):
     # 今日のイベントを取得
     events = get_today_events(service)
 
-    # イベント情報を標準出力に出力
-    print_events_info(events)
+    # イベントをCSVに保存
+    write_csv(events, "events.csv")
 
-def print_events_info(events):
-    # イベント情報を標準出力に出力
-    print("Event Information:")
-    print("-----------------------------------------------------------------------------")
-    print("{:<30} {:<30} {:<15} {:<30}".format("Event Name", "URL", "URL Type", "Start Time"))
-    print("-----------------------------------------------------------------------------")
-    for event in events:
-        event_name = event.get("summary", "No Title")
-        start_time = event["start"].get("dateTime", event["start"].get("date"))
-        # 日本時間に変換
-        start_time = convert_to_jst(start_time)
-        url, url_type = get_meeting_url_and_type(event)
-        print("{:<30} {:<30} {:<15} {:<30}".format(event_name, url, url_type, start_time))
-    print("-----------------------------------------------------------------------------")
+def write_csv(events, csv_filename):
+    # CSVファイルにイベントを書き込む
+    with open(csv_filename, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Event Name", "URL", "URL Type", "Start Time"])
+        for event in events:
+            event_name = event.get("summary", "No Title")
+            start_time = event["start"].get("dateTime", event["start"].get("date"))
+            # 日本時間に変換
+            start_time = convert_to_jst(start_time)
+            url, url_type = get_meeting_url_and_type(event)
+            writer.writerow([event_name, url, url_type, start_time])
 
 def get_meeting_url_and_type(event):
     # Google Meetの場合はhangoutLinkを使用し、それ以外はdescriptionからURLを抽出
