@@ -4,6 +4,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 import csv
 import re
+from bs4 import BeautifulSoup
 
 # Google Calendar APIのスコープ
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
@@ -31,25 +32,44 @@ def write_csv(events, csv_filename):
             start_time = event["start"].get("dateTime", event["start"].get("date"))
             # 日本時間に変換
             start_time = convert_to_jst(start_time)
-            url, url_type = get_meeting_url_and_type(event)
+            # url, url_type = get_meeting_url_and_type(event)
+            url = extract_url_from_description(event.get("description", ""))
+            url_type = classify_url_type(url)
             writer.writerow([event_name, url, url_type, start_time])
 
-def get_meeting_url_and_type(event):
-    # Google Meetの場合はhangoutLinkを使用し、それ以外はdescriptionからURLを抽出
-    if "hangoutLink" in event:
-        url = event["hangoutLink"]
-        url_type = classify_url_type(url)
-    else:
-        url = None
-        url_type = "No URL"
+def extract_url_from_description(description):
+    # リッチテキストであるかどうかを判定
+    is_rich_text = bool(BeautifulSoup(description, 'html.parser').find())
 
-        description = event.get("description", "")
-        URL_match = re.search(r"<a\s+href=\"(?P<url>https?://[^\"]+)\">", description)
+    if is_rich_text:
+        # リッチテキストの場合
+        soup = BeautifulSoup(description, 'html.parser')
+        link = soup.find('a')
+        if link and 'href' in link.attrs:
+            return link['href']
+    elif description is not None:
+        # プレーンテキストの場合
+        URL_match = re.search(r"https?://[^\s]+", description)
         if URL_match:
-            url = URL_match.group("url")
-            url_type = classify_url_type(url)
+            return URL_match.group()
+    return None
 
-    return url, url_type
+# def get_meeting_url_and_type(event):
+#     # Google Meetの場合はhangoutLinkを使用し、それ以外はdescriptionからURLを抽出
+#     if "hangoutLink" in event:
+#         url = event["hangoutLink"]
+#         url_type = classify_url_type(url)
+#     else:
+#         url = None
+#         url_type = "else URL"
+
+#         description = event.get("description", "")
+#         URL_match = re.search(r"<a\s+href=\"(?P<url>https?://[^\"]+)\">", description)
+#         if URL_match:
+#             url = URL_match.group("url")
+#             url_type = classify_url_type(url)
+
+#     return url, url_type
 
 def convert_to_jst(utc_time):
     # UTC時間を日本時間に変換する関数
@@ -57,14 +77,17 @@ def convert_to_jst(utc_time):
     return datetime.fromisoformat(utc_time).astimezone(jst).isoformat()
 
 def classify_url_type(url):
-    # URLがZoomのものか判定
-    if re.search(r"zoom\.us", url):
-        return "Zoom"
-    # URLがGoogle Meetのものか判定
-    elif re.search(r"meet\.google\.com", url):
-        return "Google Meet"
+    if url is not None:
+        # URLがZoomのものか判定
+        if re.search(r"zoom.us", url):
+            return "Zoom"
+        # URLがGoogle Meetのものか判定
+        elif re.search(r"meet.google.com", url):
+           return "Google Meet"
+        else:
+            return "Other"
     else:
-        return "Other"
+        return "No URL"
 
 def get_today_events(service):
     # 今日の開始と終了の日時を設定
