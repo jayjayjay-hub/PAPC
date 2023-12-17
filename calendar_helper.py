@@ -33,7 +33,7 @@ def write_csv(events, csv_filename):
             # 日本時間に変換
             start_time = convert_to_jst(start_time)
             # url, url_type = get_meeting_url_and_type(event)
-            url = extract_url_from_description(event.get("description", ""))
+            url = get_meeting_url(event)
             url_type = classify_url_type(url)
             writer.writerow([event_name, url, url_type, start_time])
 
@@ -54,22 +54,16 @@ def extract_url_from_description(description):
             return URL_match.group()
     return None
 
-# def get_meeting_url_and_type(event):
-#     # Google Meetの場合はhangoutLinkを使用し、それ以外はdescriptionからURLを抽出
-#     if "hangoutLink" in event:
-#         url = event["hangoutLink"]
-#         url_type = classify_url_type(url)
-#     else:
-#         url = None
-#         url_type = "else URL"
-
-#         description = event.get("description", "")
-#         URL_match = re.search(r"<a\s+href=\"(?P<url>https?://[^\"]+)\">", description)
-#         if URL_match:
-#             url = URL_match.group("url")
-#             url_type = classify_url_type(url)
-
-#     return url, url_type
+def get_meeting_url(event):
+    if event is not None:
+        # Google Meetの場合はhangoutLinkを使用し、それ以外はdescriptionからURLを抽出
+        if "hangoutLink" in event:
+            url = event["hangoutLink"]
+        else:
+            url = extract_url_from_description(event.get("description", ""))
+        return url
+    else:
+        return None
 
 def convert_to_jst(utc_time):
     # UTC時間を日本時間に変換する関数

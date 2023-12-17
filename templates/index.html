@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Next Meeting App</title>
+</head>
+<body>
+    <h1 id="running">Running</h1>
+    <button id="startButton">起動</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startButton = document.getElementById('startButton');
+            
+            if (startButton) {
+                startButton.addEventListener('click', () => {
+                    window.location.href = '/next_meeting';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
