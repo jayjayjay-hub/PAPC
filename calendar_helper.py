@@ -4,15 +4,36 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 import csv
 import re
+import os
+import pickle
 from bs4 import BeautifulSoup
 
 # Google Calendar APIのスコープ
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+TOKEN_PICKLE_FILE = "token.pickle"
+CLIENT_SECRETS_FILE = "papc.json"
 
 def authenticate_and_get_service():
-    # Google Calendar APIの認証とサービスの取得
-    flow = InstalledAppFlow.from_client_secrets_file("papc.json", SCOPES)
-    creds = flow.run_local_server(port=0)
+    creds = None
+
+    # 以前に保存されたトークンの読み込み
+    if os.path.exists(TOKEN_PICKLE_FILE) and os.path.getsize(TOKEN_PICKLE_FILE) > 0:
+        with open(TOKEN_PICKLE_FILE, "rb") as token:
+            creds = pickle.load(token)
+
+    # トークンが無効または存在しない場合は認証を実行
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
+            creds = flow.run_local_server(port=0)
+
+        # 認証情報を保存
+        with open(TOKEN_PICKLE_FILE, "wb") as token:
+            pickle.dump(creds, token)
+
+    # サービスを構築して返す
     return build("calendar", "v3", credentials=creds)
 
 def save_today_events_to_csv(service):
