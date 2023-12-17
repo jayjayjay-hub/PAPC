@@ -58,8 +58,9 @@ def main():
             description='面倒な作業を自動化するアプリです')
     parser.add_argument('during', metavar='N', type=int, nargs='?', default=5, help='実行間隔')
     args = parser.parse_args()
-    if 1 <= args.during:
-        DURING = args.during
+    DURING = args.during
+    if DURING < 1:
+        DURING = 5
 
     # 初回
     service = authenticate_and_get_service()
