@@ -29,8 +29,6 @@ def launch_app(info):
     """イベント日時が迫ったらミーティングアプリを立ち上げる
     """
     # open する
-    if info['URL Type'] == 'Zoom':
-        browser_handler.save_credentials('Zoom')
     if len(info['URL']) == 0:
         return
     browser_handler.browser_handler(info['URL'], info['URL Type'])
@@ -53,6 +51,7 @@ def add_job(info):
     schedule.every().day.at(job_time).do(launch_app, info)
 
 def main():
+    browser_handler.save_credentials('Zoom')
     parser = argparse.ArgumentParser(
             prog='自動化アプリ (仮)',
             description='面倒な作業を自動化するアプリです')

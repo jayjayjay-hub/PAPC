@@ -139,6 +139,7 @@ def browser_handler(url, meeting_type='meet'):
         user_input = input("Enter 'q' or 'quit' to quit the driver: ")
         if user_input == "q" or user_input == "quit":
             driver.quit()
+            return
 
 
 if __name__ == "__main__":
