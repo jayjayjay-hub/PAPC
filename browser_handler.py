@@ -62,8 +62,9 @@ def run_applescript(url):
         activate
     end tell
     """
-
+    # mac
     # subprocess.run(['osascript', '-e', applescript], check=True)
+
     # windows
     subprocess.run(['google-chrome', '--new-window', url], check=True)
 
