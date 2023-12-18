@@ -7,6 +7,7 @@ import re
 import os
 import pickle
 from bs4 import BeautifulSoup
+from google.auth.transport.requests import Request
 
 # Google Calendar APIのスコープ
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
@@ -53,7 +54,6 @@ def write_csv(events, csv_filename):
             start_time = event["start"].get("dateTime", event["start"].get("date"))
             # 日本時間に変換
             start_time = convert_to_jst(start_time)
-            # url, url_type = get_meeting_url_and_type(event)
             url = get_meeting_url(event)
             url_type = classify_url_type(url)
             writer.writerow([event_name, url, url_type, start_time])
@@ -106,16 +106,15 @@ def classify_url_type(url):
 
 def get_today_events(service):
     # 今日の開始と終了の日時を設定
-    now = datetime.utcnow().isoformat() + "Z"
-    end_time = (datetime.utcnow() + timedelta(days=1)).isoformat() + "Z"
-
+    now = datetime.utcnow()
+    end_time = now + timedelta(days=1)
     # 今日のすべての予定を取得
     events_result = (
         service.events()
         .list(
             calendarId="primary",
-            timeMin=now,
-            timeMax=end_time,
+            timeMin=now.isoformat() + "Z",
+            timeMax=end_time.isoformat() + "Z",
             singleEvents=True,
             orderBy="startTime",
         )

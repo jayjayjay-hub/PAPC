@@ -2,6 +2,7 @@ import getpass
 import json
 import os
 import subprocess
+import webbrowser
 
 from selenium import webdriver
 from selenium.common import WebDriverException
@@ -62,7 +63,9 @@ def run_applescript(url):
     end tell
     """
 
-    subprocess.run(['osascript', '-e', applescript], check=True)
+    # subprocess.run(['osascript', '-e', applescript], check=True)
+    # windows
+    subprocess.run(['google-chrome', '--new-window', url], check=True)
 
 
 def parse_zoom_url(zoom_url):
@@ -76,6 +79,8 @@ def parse_zoom_url(zoom_url):
 
     return meet_code, password
 
+def run_zoom_windows(zoom_url):
+    webbrowser.open(zoom_url)
 
 def browser_handler(url, meeting_type='meet'):
     webdriver_service = Service(ChromeDriverManager().install())
@@ -133,6 +138,12 @@ def browser_handler(url, meeting_type='meet'):
          .move_to_element(driver.find_element(By.XPATH, join_btn_path))
          .pause(1)
          .double_click().perform())
+        # zoom url
+        # (meet_code, password) = parse_zoom_url(url)
+        # zoom_url = f"https://app.zoom.us/wc/{meet_code}/start?from=pwa&fromPWA=1"
+
+        # run_zoom_windows(zoom_url)
+
     elif meeting_type == 'Other':
         driver.get(url)
     if meeting_type != 'Google Meet':
@@ -144,7 +155,6 @@ def browser_handler(url, meeting_type='meet'):
 
 if __name__ == "__main__":
     save_credentials("Zoom")
-    # browser_handler("https://us05web.zoom.us/j/3582195858?pwd=9TTCTc6cTRV80flGFpc7JoaEngx8NC.1&omn=84811349927",
-    #                 'zoom')
-    # browser_handler("https://meet.google.com/khv-udek-dbc?authuser=0&hs=122&ijlm=1702717531751&pli=1", 'meet')
-    browser_handler("https://www.google.com", 'Other')
+    browser_handler("https://us05web.zoom.us/j/3582195858?pwd=9TTCTc6cTRV80flGFpc7JoaEngx8NC.1&omn=84811349927", 'Zoom')
+    # browser_handler("https://meet.google.com/khv-udek-dbc?authuser=0&hs=122&ijlm=1702717531751&pli=1", 'Google Meet')
+    # browser_handler("https://www.google.com", 'Other')
