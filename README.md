@@ -31,6 +31,10 @@
 * `run_applescript(url)`: ミーティングをGoogle Chromeで開くためのScriptを実行します。
 * `browser_handler(url, meeting_type='meet')`: 指定されたミーティングURLを適切なブラウザで開きます。
 
+### [app.py](app.py), [static/](static), [templates/](templates)
+
+unfinished
+
 ## 🚀 使用方法
 
 ### 必要なもの
